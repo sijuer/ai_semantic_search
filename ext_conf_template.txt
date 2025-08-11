@@ -1,0 +1,39 @@
+# cat=basic; type=string; label=PostgreSQL Host
+postgresql_host = localhost
+
+# cat=basic; type=int+; label=PostgreSQL Port
+postgresql_port = 5432
+
+# cat=basic; type=string; label=PostgreSQL Database
+postgresql_database = typo3_search
+
+# cat=basic; type=string; label=PostgreSQL User
+postgresql_user = postgres
+
+# cat=basic; type=password; label=PostgreSQL Password
+postgresql_password = 
+
+# cat=api; type=string; label=OpenAI API Key
+openai_api_key = 
+
+# cat=search; type=int+; label=Default Search Results Limit
+default_search_limit = 10
+
+# cat=search; type=options[text-embedding-3-small=text-embedding-3-small,text-embedding-3-large=text-embedding-3-large]; label=OpenAI Embedding Model
+embedding_model = text-embedding-3-
+
+// Configuration/TsConfig/Page/AiSemanticSearch.tsconfig
+mod.wizards.newContentElement.wizardItems.plugins {
+    elements {
+        PITS\AiSemanticSearch_search {
+            iconIdentifier = content-plugin
+            title = Semantic Search
+            description = Add semantic search functionality
+            tt_content_defValues {
+                CType = list
+                list_type = semanticsearch_search
+            }
+        }
+    }
+    show = *
+}

@@ -1,0 +1,33 @@
+<html xmlns:f="http://typo3.org/ns/TYPO3/CMS/Fluid/ViewHelpers" data-namespace-typo3-fluid="true">
+<f:layout name="Default" />
+<f:section name="content">
+    <div class="semantic-search">
+        <h2>AI Semantic Search</h2>
+        
+        <f:form action="search" method="post" class="search-form">
+            <div class="form-group">
+                <f:form.textfield 
+                    name="q" 
+                    value="{query}" 
+                    placeholder="Enter your search query..." 
+                    class="form-control search-input" 
+                />
+                <f:form.submit value="Search" class="btn btn-primary" />
+            </div>
+        </f:form>
+        <f:if condition="{results}">
+            
+            <div class="search-results">
+                <h3>Search Results ({results -> f:count()} found)</h3>
+                <f:for each="{results}" as="result">
+                    <div class="search-result">
+                        <h4><f:link.page pageUid="{result.typo3_uid}">{result.title}</f:link.page></h4>
+                        <p>{result.content -> f:format.crop(maxCharacters: 200, append: '...')}</p>
+                        <small>Relevance: {result.combined_score -> f:format.number(decimals: 2)}</small>
+                    </div>
+                </f:for>
+            </div>
+        </f:if>
+    </div>
+</f:section>
+</html>

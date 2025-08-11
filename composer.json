@@ -1,0 +1,35 @@
+{
+  "name": "pits/ai_semantic_search",
+  "description" : "This extension provides Semantic search using PostgreSQL and pgvector for TYPO3",
+  "license": "GPL-2.0+",
+  "autoload": {
+        "psr-4": {
+            "PITS\\AiSemanticSearch\\": "Classes"
+        }
+    },
+  "keywords": [
+        "TYPO3",
+        "extension",
+        "pits",
+        "semantic",
+        "search",
+        "postgresql",
+        "pgvector"
+    ],
+  "authors": [
+        {
+            "name": "PITS",
+            "role": "Developer"
+        }
+   ],
+    "require": {
+        "php": "^8.1",
+        "typo3/cms-core": "^12.4"
+    },   
+  "type": "typo3-cms-extension",
+  "extra": {
+    "typo3/cms": {
+      "extension-key": "ai_semantic_search"
+    }
+  }
+}

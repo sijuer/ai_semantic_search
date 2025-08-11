@@ -1,0 +1,140 @@
+<?php
+declare(strict_types=1);
+
+namespace PITS\AiSemanticSearch\Service;
+
+use TYPO3\CMS\Core\SingletonInterface;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
+
+class SearchService implements SingletonInterface
+{
+    private PostgreSQLConnectionService $pgService;
+    private VectorService $vectorService;
+
+    public function __construct()
+    {
+        $this->pgService = GeneralUtility::makeInstance(PostgreSQLConnectionService::class);
+        $this->vectorService = GeneralUtility::makeInstance(VectorService::class);
+    }
+
+    public function search(string $query, int $rootPageId = 0, int $limit = 10): array
+    {
+        $pdo = $this->pgService->getConnection();
+        
+        // Generate embedding for search query
+        $queryVector = $this->vectorService->generateEmbedding($query);
+        $queryVectorString = $this->vectorService->formatVectorForPostgreSQL($queryVector);
+
+        // Semantic search with hybrid scoring
+        /*$sql = "
+            SELECT 
+                typo3_uid, typo3_table, title, content, url,
+                (content_vector <=> :query_vector) AS semantic_distance,
+                ts_rank(content_tsvector, plainto_tsquery('english', :query_text)) AS text_rank,
+                (
+                    (1 - (content_vector <=> :query_vector)) * 0.7 + 
+                    ts_rank(content_tsvector, plainto_tsquery('english', :query_text)) * 0.3
+                ) AS combined_score
+            FROM typo3_search_index
+            WHERE 
+                (:root_page_id = 0 OR root_page_uid = :root_page_id)
+                AND (
+                    content_vector <=> :query_vector < 0.5
+                    OR content_tsvector @@ plainto_tsquery('english', :query_text)
+                )
+            ORDER BY combined_score DESC
+            LIMIT :limit
+        ";*/
+
+      /*$sql = "
+            SELECT 
+                typo3_uid, typo3_table, title, content, url,
+                (content_vector <=> :query_vector) AS semantic_distance,
+                ts_rank(content_tsvector, plainto_tsquery('english', :query_text)) AS text_rank,
+                -- Fixed combined score with proper null handling
+                (
+                    (1 - (content_vector <=> :query_vector)) * 0.7 + 
+                    COALESCE(ts_rank(content_tsvector, plainto_tsquery('english', :query_text)), 0) * 0.3
+                ) AS combined_score
+            FROM typo3_search_index
+            WHERE 
+                (:root_page_id = 0 OR root_page_uid = :root_page_id)
+                AND (
+                    content_vector <=> :query_vector < 0.5
+                    OR content_tsvector @@ plainto_tsquery('english', :query_text)
+                )
+            ORDER BY combined_score DESC
+            LIMIT :limit
+    ";*/
+   /* $sql = "
+            SELECT 
+            typo3_uid, typo3_table, title, content, url,
+            (content_vector <=> :query_vector) AS semantic_distance,
+            ts_rank(content_tsvector, plainto_tsquery('english', :query_text)) AS text_rank,
+            (
+                (1 - (content_vector <=> :query_vector)) * 0.7 + 
+                COALESCE(ts_rank(content_tsvector, plainto_tsquery('english', :query_text)), 0) * 0.3
+            ) AS combined_score
+        FROM typo3_search_index
+        WHERE 
+            (:root_page_id = 0 OR root_page_uid = :root_page_id)
+            AND (
+                content_vector <=> :query_vector < 0.7
+                OR content_tsvector @@ plainto_tsquery('english', :query_text)
+            )
+        ORDER BY combined_score DESC
+        LIMIT :limit
+    ";*/
+    $sql ="
+    SELECT 
+  (1 - (content_vector <=> :query_vector)) AS similarity,
+  *
+FROM typo3_search_index
+ORDER BY similarity DESC
+LIMIT 5;
+    ";
+ /*     $sql="
+ SELECT 
+    MIN(content_vector <=> :query_vector) as min_distance,
+    MAX(content_vector <=> :query_vector) as max_distance,
+    AVG(content_vector <=> :query_vector) as avg_distance
+FROM typo3_search_index 
+WHERE (:root_page_id = 0 OR root_page_uid = :root_page_id)
+
+    ";*/
+
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute([
+            'query_vector' => $queryVectorString,
+            //'query_text' => $query,
+            //'root_page_id' => $rootPageId,
+            //'limit' => $limit,
+        ]);
+
+        return $stmt->fetchAll();
+    }
+
+    public function getSimilarContent(int $pageId, int $limit = 5): array
+    {
+        $pdo = $this->pgService->getConnection();
+        
+        $sql = "
+            SELECT 
+                s2.typo3_uid, s2.typo3_table, s2.title, s2.content, s2.url,
+                (s1.content_vector <=> s2.content_vector) AS similarity
+            FROM typo3_search_index s1
+            JOIN typo3_search_index s2 ON s1.id != s2.id
+            WHERE s1.typo3_uid = :page_id AND s1.typo3_table = 'pages'
+            ORDER BY similarity ASC
+            LIMIT :limit
+        ";
+
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute([
+            'page_id' => $pageId,
+            'limit' => $limit,
+        ]);
+
+        return $stmt->fetchAll();
+    }
+}

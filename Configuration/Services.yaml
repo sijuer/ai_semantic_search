@@ -1,0 +1,24 @@
+services:
+  _defaults:
+    autowire: true
+    autoconfigure: true
+    public: false
+
+  PITS\AiSemanticSearch\:
+    resource: '../Classes/*'
+
+  PITS\AiSemanticSearch\Service\IndexService:
+    public: true
+
+  PITS\AiSemanticSearch\Service\SearchService:
+    public: true
+
+  PITS\AiSemanticSearch\Service\VectorService:
+    public: true
+
+  PITS\AiSemanticSearch\Command\IndexCommand:
+    tags:
+      - name: 'console.command'
+        command: 'ai_semantic_search:indexCommand'
+        description: 'Index AI Semantic Search: Action to perform: index, reindex, clear, setup'
+        hidden: false
